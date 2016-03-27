@@ -7,7 +7,7 @@ import hus.HusMove;
 import java.util.ArrayList;
 
 public class MyTools {
-    public enum Strategy { MINMAX }
+    public enum Strategy { MINMAX, ALPHABETA }
     public enum Utility { BOARDVALUE }
 
     public static double getSomething(){

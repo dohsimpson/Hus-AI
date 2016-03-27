@@ -17,6 +17,7 @@ public class StudentPlayer extends HusPlayer {
     protected boolean DEBUG;
 
     public int MINMAX_TREE_DEPTH;
+    public int ALPHABETA_TREE_DEPTH;
 
     /** You must modify this constructor to return your student number.
      * This is important, because this is what the code that runs the
@@ -29,9 +30,10 @@ public class StudentPlayer extends HusPlayer {
     public StudentPlayer(String s) {
         super(s);
         this.DEBUG = true;
-        this.STRATEGY = Strategy.MINMAX;
+        this.STRATEGY = Strategy.ALPHABETA;
         this.UTILITY = Utility.BOARDVALUE;
         this.MINMAX_TREE_DEPTH = 6;
+        this.ALPHABETA_TREE_DEPTH = 7;
     }
 
     /** This is the primary method that you need to implement.
@@ -54,6 +56,9 @@ public class StudentPlayer extends HusPlayer {
         switch (STRATEGY) {
             case MINMAX:
                 move = minmaxMove(board_state);
+                break;
+            case ALPHABETA:
+                move = alphaBetaMove(board_state);
                 break;
             default:
                 move = null;
@@ -103,6 +108,61 @@ public class StudentPlayer extends HusPlayer {
                 maxValue = Double.max(maxValue, v);
             else
                 minValue = Double.min(minValue, v);
+        }
+        if (isMax)
+            return maxValue;
+        else
+            return minValue;
+    }
+
+    // alpha-beta pruning
+    public HusMove alphaBetaMove(HusBoardState board)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+        HusMove maxMove = moves.get(0);
+        double maxValue = Double.MIN_VALUE;
+        for (HusMove m : moves) {
+            HusBoardState nextBoard = (HusBoardState) board.clone();
+            nextBoard.move(m);
+            double v = alphaBetaValue(false, nextBoard, ALPHABETA_TREE_DEPTH - 1, Double.MIN_VALUE, Double.MAX_VALUE);
+            if (v > maxValue) {
+                maxValue = v;
+                maxMove = m;
+            }
+        }
+        debugLog("alpha beta move: " + maxMove.getPit());
+        if (maxValue != Double.MIN_VALUE)
+            debugLog("alpha beta value: " + String.format("%.5f", maxValue));
+
+        return maxMove;
+    }
+    public double alphaBetaValue(boolean isMax, HusBoardState board, int depth, double alpha, double beta)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+
+        if (depth <= 1 || moves.isEmpty())
+            return utilityOfBoard(board);
+
+        double maxValue = Double.MIN_VALUE;
+        double minValue = Double.MAX_VALUE;
+        for (HusMove m : moves) {
+            HusBoardState nextBoard = (HusBoardState) board.clone();
+            nextBoard.move(m);
+            double v = alphaBetaValue(!isMax, nextBoard, depth - 1, alpha, beta);
+            if (isMax) {
+                maxValue = Double.max(maxValue, v);
+                if (maxValue >= beta)
+                    break;
+                else
+                    alpha = Double.max(maxValue, alpha);
+            }
+            else {
+                minValue = Double.min(minValue, v);
+                if (minValue <= alpha)
+                    break;
+                else
+                    beta = Double.min(minValue, beta);
+            }
         }
         if (isMax)
             return maxValue;
