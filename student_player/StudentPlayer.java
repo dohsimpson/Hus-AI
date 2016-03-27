@@ -31,7 +31,7 @@ public class StudentPlayer extends HusPlayer {
         super(s);
         this.DEBUG = true;
         this.STRATEGY = Strategy.ALPHABETA;
-        this.UTILITY = Utility.BOARDVALUE;
+        this.UTILITY = Utility.LEASTOPPONENTMOVES;
         this.MINMAX_TREE_DEPTH = 6;
         this.ALPHABETA_TREE_DEPTH = 7;
     }
@@ -175,6 +175,9 @@ public class StudentPlayer extends HusPlayer {
         double ret;
         switch (UTILITY) {
             case BOARDVALUE:
+                ret = boardValue(board, player_id);
+                break;
+            case LEASTOPPONENTMOVES:
                 ret = boardValue(board, player_id);
                 break;
             default:
