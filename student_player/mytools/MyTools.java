@@ -15,9 +15,9 @@ public class MyTools {
     }
 
     // utility measure functions
-    public static double boardValue(HusBoardState board, int player_id)
+    public static int boardValue(HusBoardState board, int player_id)
     {
-        double ret = 0;
+        int ret = 0;
         int[][] pits = board.getPits();
         int[] my_pits = pits[player_id];
         for (int i : my_pits) {
@@ -26,19 +26,19 @@ public class MyTools {
         return ret;
     }
 
-    public static double boardValue2(HusBoardState board, int player_id)
+    public static int boardValue2(HusBoardState board, int player_id)
     {
         return 0;
     }
 
-    public static double leastOpponentMoves(HusBoardState board, int player_id)
+    public static int leastOpponentMoves(HusBoardState board, int player_id)
     {
-        double ret = 0;
+        int ret = 0;
         int[][] pits = board.getPits();
         int[] opponent_pits = pits[1 - player_id];
         for (int i : opponent_pits) {
             if (i > 1)
-                ret++;
+                ret--;
         }
         return ret;
     }
