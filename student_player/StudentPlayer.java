@@ -6,16 +6,33 @@ import hus.HusMove;
 
 import java.util.ArrayList;
 
-import student_player.mytools.MyTools;
+import static student_player.mytools.MyTools.*;
+import student_player.mytools.MyTools.*;
 
 /** A Hus player submitted by a student. */
 public class StudentPlayer extends HusPlayer {
+
+    protected Strategy STRATEGY;
+    protected Utility UTILITY;
+    protected boolean DEBUG;
+
+    public int MINMAX_TREE_DEPTH;
 
     /** You must modify this constructor to return your student number.
      * This is important, because this is what the code that runs the
      * competition uses to associate you with your agent.
      * The constructor should do nothing else. */
-    public StudentPlayer() { super("xxxxxxxxx"); }
+    public StudentPlayer() {
+        this("260516739");
+    }
+
+    public StudentPlayer(String s) {
+        super(s);
+        this.DEBUG = true;
+        this.STRATEGY = Strategy.MINMAX;
+        this.UTILITY = Utility.BOARDVALUE;
+        this.MINMAX_TREE_DEPTH = 6;
+    }
 
     /** This is the primary method that you need to implement.
      * The ``board_state`` object contains the current state of the game,
@@ -31,17 +48,96 @@ public class StudentPlayer extends HusPlayer {
         int[] op_pits = pits[opponent_id];
 
         // Use code stored in ``mytools`` package.
-        MyTools.getSomething();
+        getSomething();
 
-        // Get the legal moves for the current board state.
-        ArrayList<HusMove> moves = board_state.getLegalMoves();
-        HusMove move = moves.get(0);
-
-        // We can see the effects of a move like this...
-        HusBoardState cloned_board_state = (HusBoardState) board_state.clone();
-        cloned_board_state.move(move);
+        HusMove move;
+        switch (STRATEGY) {
+            case MINMAX:
+                move = minmaxMove(board_state);
+                break;
+            default:
+                move = null;
+                errLog("unimplemented strategy!");
+                break;
+        }
 
         // But since this is a placeholder algorithm, we won't act on that information.
         return move;
     }
+
+    // min-max
+    public HusMove minmaxMove(HusBoardState board)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+        HusMove maxMove = moves.get(0);
+        double maxValue = Double.MIN_VALUE;
+        for (HusMove m : moves) {
+            HusBoardState nextBoard = (HusBoardState) board.clone();
+            nextBoard.move(m);
+            double v = minmaxValue(false, nextBoard, MINMAX_TREE_DEPTH - 1);
+            if (v > maxValue) {
+                maxValue = v;
+                maxMove = m;
+            }
+        }
+        debugLog("minmax move: " + maxMove.getPit());
+        if (maxValue != Double.MIN_VALUE)
+            debugLog("minmax value: " + String.format("%.5f", maxValue));
+
+        return maxMove;
+    }
+    public double minmaxValue(boolean isMax, HusBoardState board, int depth)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+
+        if (depth <= 1 || moves.isEmpty())
+            return utilityOfBoard(board);
+
+        double maxValue = Double.MIN_VALUE;
+        double minValue = Double.MAX_VALUE;
+        for (HusMove m : moves) {
+            HusBoardState nextBoard = (HusBoardState) board.clone();
+            nextBoard.move(m);
+            double v = minmaxValue(!isMax, nextBoard, depth - 1);
+            if (isMax)
+                maxValue = Double.max(maxValue, v);
+            else
+                minValue = Double.min(minValue, v);
+        }
+        if (isMax)
+            return maxValue;
+        else
+            return minValue;
+    }
+
+    public double utilityOfBoard(HusBoardState board)
+    {
+        double ret;
+        switch (UTILITY) {
+            case BOARDVALUE:
+                ret = boardValue(board, player_id);
+                break;
+            default:
+                ret = 0;
+                errLog("unimplemented strategy!");
+                break;
+        }
+        return ret;
+    }
+
+    // -----
+
+    // others
+    protected void debugLog(String s)
+    {
+        if (DEBUG) {
+            System.err.println("[DEBUG] " + s);
+        }
+    }
+
+    protected void errLog(String s)
+    {
+        System.err.println("[ERROR] " + s);
+    }
+    // ---
 }
