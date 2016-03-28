@@ -5,9 +5,10 @@ import hus.HusPlayer;
 import hus.HusMove;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public class MyTools {
-    public enum Strategy { MINMAX, ALPHABETA }
+    public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA }
     public enum Utility { BOARDVALUE, LEASTOPPONENTMOVES }
 
     public static double getSomething(){
@@ -42,4 +43,67 @@ public class MyTools {
         }
         return ret;
     }
+
+    // others
+    public static HusBoardState makeNextBoard(HusBoardState board, HusMove move)
+    {
+        HusBoardState nextBoard = (HusBoardState) board.clone();
+        nextBoard.move(move);
+        return nextBoard;
+    }
+    public static ArrayList<HusBoardState> makeNextBoards(HusBoardState board, ArrayList<HusMove> moves)
+    {
+        ArrayList<HusBoardState> nextBoards = new ArrayList<HusBoardState>();
+        for (HusMove m: moves) {
+            nextBoards.add(makeNextBoard(board, m));
+        }
+        return nextBoards;
+    }
+    public static void sortBoards(ArrayList<HusBoardState> boards, final int player_id, final Utility util)
+    {
+        boards.sort(new Comparator<HusBoardState>() {
+            // sort by descending order
+            public int compare(HusBoardState b1, HusBoardState b2) {
+                int ret;
+                switch (util) {
+                    case BOARDVALUE:
+                        ret = boardValue(b2, player_id) - boardValue(b1, player_id);
+                        break;
+                    case LEASTOPPONENTMOVES:
+                        ret = leastOpponentMoves(b2, player_id) - leastOpponentMoves(b1, player_id);
+                        break;
+                    default:
+                        ret = 0;
+                        break;
+                }
+                return ret;
+            }
+        });
+    }
+
+    public static void sortMovesByBoards(ArrayList<HusMove> moves, final HusBoardState board, final int player_id, final Utility util)
+    {
+        moves.sort(new Comparator<HusMove>() {
+            // sort by descending order
+            public int compare(HusMove m1, HusMove m2) {
+                int ret;
+                HusBoardState b1 = makeNextBoard(board, m1);
+                HusBoardState b2 = makeNextBoard(board, m2);
+
+                switch (util) {
+                    case BOARDVALUE:
+                        ret = boardValue(b2, player_id) - boardValue(b1, player_id);
+                        break;
+                    case LEASTOPPONENTMOVES:
+                        ret = leastOpponentMoves(b2, player_id) - leastOpponentMoves(b1, player_id);
+                        break;
+                    default:
+                        ret = 0;
+                        break;
+                }
+                return ret;
+            }
+        });
+    }
+
 }
