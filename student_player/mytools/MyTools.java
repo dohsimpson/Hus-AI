@@ -9,7 +9,7 @@ import java.util.Comparator;
 
 public class MyTools {
     public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA }
-    public enum Utility { BOARDVALUE, LEASTOPPONENTMOVES }
+    public enum Utility { BOARDVALUE, BOARDVALUE2, LEASTOPPONENTMOVES }
 
     public static double getSomething(){
         return Math.random();
@@ -29,7 +29,14 @@ public class MyTools {
 
     public static int boardValue2(HusBoardState board, int player_id)
     {
-        return 0;
+        if (board.gameOver()) {
+            if (board.getWinner() == player_id)
+                return Integer.MAX_VALUE;
+            else if (board.getWinner() == board.DRAW) {}
+            else
+                return Integer.MIN_VALUE;
+        }
+        return boardValue(board, player_id);
     }
 
     public static int leastOpponentMoves(HusBoardState board, int player_id)

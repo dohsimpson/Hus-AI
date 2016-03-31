@@ -32,7 +32,7 @@ public class StudentPlayer extends HusPlayer {
         super(s);
         this.DEBUG = true;
         this.STRATEGY = Strategy.ORDEREDALPHABETA;
-        this.UTILITY = Utility.BOARDVALUE;
+        this.UTILITY = Utility.BOARDVALUE2;
         this.MINMAX_TREE_DEPTH = 6;
         this.ALPHABETA_TREE_DEPTH = 7;
         this.ORDERED_ALPHABETA_TREE_DEPTH = 8;
@@ -238,6 +238,9 @@ public class StudentPlayer extends HusPlayer {
         switch (UTILITY) {
             case BOARDVALUE:
                 ret = boardValue(board, player_id);
+                break;
+            case BOARDVALUE2:
+                ret = boardValue2(board, player_id);
                 break;
             case LEASTOPPONENTMOVES:
                 ret = leastOpponentMoves(board, player_id);
