@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 public class MyTools {
-    public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA }
+    public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA, FORWARDORDEREDALPHABETA }
     public enum Utility { BOARDVALUE, BOARDVALUE2, LEASTOPPONENTMOVES }
 
     public static double getSomething(){
@@ -52,6 +52,24 @@ public class MyTools {
     }
 
     // others
+    /** this method differs from boardValue in that it is the opponent's turn **/
+    public static int leastBoardValueNextTurn(HusBoardState board, int player_id)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+        int minValue = Integer.MAX_VALUE;
+        for (HusBoardState nextBoard : makeNextBoards(board, moves)) {
+            int v = boardValue2(nextBoard, player_id);
+            if (v < minValue)
+                minValue = v;
+        }
+        return minValue;
+    }
+
+    public static int mostLostNextTurn(HusBoardState board, int player_id)
+    {
+        return (boardValue2(board, player_id) - leastBoardValueNextTurn(board, player_id));
+    }
+
     public static HusBoardState makeNextBoard(HusBoardState board, HusMove move)
     {
         HusBoardState nextBoard = (HusBoardState) board.clone();

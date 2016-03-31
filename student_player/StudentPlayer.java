@@ -19,6 +19,7 @@ public class StudentPlayer extends HusPlayer {
     public int MINMAX_TREE_DEPTH;
     public int ALPHABETA_TREE_DEPTH;
     public int ORDERED_ALPHABETA_TREE_DEPTH;
+    public int FORWARD_ALPHABETA_TREE_DEPTH;
 
     /** You must modify this constructor to return your student number.
      * This is important, because this is what the code that runs the
@@ -31,11 +32,12 @@ public class StudentPlayer extends HusPlayer {
     public StudentPlayer(String s) {
         super(s);
         this.DEBUG = true;
-        this.STRATEGY = Strategy.ORDEREDALPHABETA;
+        this.STRATEGY = Strategy.FORWARDORDEREDALPHABETA;
         this.UTILITY = Utility.BOARDVALUE2;
         this.MINMAX_TREE_DEPTH = 6;
         this.ALPHABETA_TREE_DEPTH = 7;
         this.ORDERED_ALPHABETA_TREE_DEPTH = 6;
+        this.FORWARD_ALPHABETA_TREE_DEPTH = 200;
     }
 
     /** This is the primary method that you need to implement.
@@ -54,6 +56,9 @@ public class StudentPlayer extends HusPlayer {
                 break;
             case ORDEREDALPHABETA:
                 move = orderedAlphaBetaMove(board_state);
+                break;
+            case FORWARDORDEREDALPHABETA:
+                move = forwardOrderedAlphaBetaMove(board_state);
                 break;
             default:
                 move = null;
@@ -201,6 +206,74 @@ public class StudentPlayer extends HusPlayer {
 
         for (HusBoardState nextBoard : nextBoards) {
             int v = orderedAlphaBetaValue(!isMax, nextBoard, depth - 1, alpha, beta);
+            if (isMax) {
+                maxValue = Integer.max(maxValue, v);
+                if (maxValue >= beta)
+                    break;
+                else
+                    alpha = Integer.max(maxValue, alpha);
+            }
+            else {
+                minValue = Integer.min(minValue, v);
+                if (minValue <= alpha)
+                    break;
+                else
+                    beta = Integer.min(minValue, beta);
+            }
+        }
+        if (isMax)
+            return maxValue;
+        else
+            return minValue;
+    }
+
+    // ordered alpha-beta pruning + forward pruning
+    public HusMove forwardOrderedAlphaBetaMove(HusBoardState board)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+        sortMovesByBoards(moves, board, player_id, UTILITY);
+        HusMove maxMove = moves.get(0);
+        int maxValue = Integer.MIN_VALUE;
+        for (HusMove m : moves) {
+            HusBoardState nextBoard = (HusBoardState) board.clone();
+            nextBoard.move(m);
+            int v = forwardOrderedAlphaBetaValue(false, nextBoard, ORDERED_ALPHABETA_TREE_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            if (v > maxValue) {
+                maxValue = v;
+                maxMove = m;
+            }
+        }
+        debugLog("forward orderd alpha beta move: " + maxMove.getPit());
+        if (maxValue != Integer.MIN_VALUE)
+            debugLog("forward orderd alpha beta value: " + maxValue);
+
+        return maxMove;
+    }
+    public int forwardOrderedAlphaBetaValue(boolean isMax, HusBoardState board, int depth, int alpha, int beta)
+    {
+        ArrayList<HusMove> moves = board.getLegalMoves();
+
+        if (depth <= 1 || moves.isEmpty())
+            return utilityOfBoard(board);
+
+        int maxValue = Integer.MIN_VALUE;
+        int minValue = Integer.MAX_VALUE;
+        ArrayList<HusBoardState> nextBoards = makeNextBoards(board, moves);
+        sortBoards(nextBoards, player_id, UTILITY);
+
+        for (HusBoardState nextBoard : nextBoards) {
+            // forward pruning
+            // test for quiescence
+            int v;
+
+            if (!isMax && utilityOfBoard(nextBoard) == utilityOfBoard(board)) {
+                v = utilityOfBoard(nextBoard);
+                debugLog("forward pruning: quiescence state with value: " + v);
+            }
+
+            else
+                v = forwardOrderedAlphaBetaValue(!isMax, nextBoard, depth - 1, alpha, beta);
+
             if (isMax) {
                 maxValue = Integer.max(maxValue, v);
                 if (maxValue >= beta)
