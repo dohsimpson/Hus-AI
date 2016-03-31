@@ -70,9 +70,12 @@ public class KeyboardPlayer extends StudentPlayer {
 
             if (inputInt < 0) {
                 switch (inputInt) {
-                    // minmax
                     case -1:
-                        move = minmaxMove(board_state);
+                        move = orderedAlphaBetaMove(board_state);
+                        break;
+                    case -2:
+                        treePlayer tree = new treePlayer();
+                        move = tree.chooseMove(board_state);
                         break;
                 }
                 dryRun = true;

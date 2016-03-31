@@ -113,4 +113,52 @@ public class MyTools {
         });
     }
 
+    // tree implementation
+    // source: http://stackoverflow.com/questions/3522454/java-tree-data-structure
+    public static class Node<T> {
+        public T value;
+        public ArrayList<Node<T>> children;
+
+        public Node()
+        {
+            this.children = new ArrayList<Node<T>>();
+        }
+
+        public Node(T v)
+        {
+            this.value = v;
+            this.children = new ArrayList<Node<T>>();
+        }
+
+        public void setValue(T v)
+        {
+            this.value = v;
+        }
+
+        public Node<T> addChild(Node<T> c)
+        {
+            this.children.add(c);
+            return c;
+        }
+
+        public void prettyPrint(String indent, boolean last)
+        {
+            System.out.print(indent);
+            if (last)
+            {
+                System.out.print("\\-");
+                indent += "  ";
+            }
+            else
+            {
+                System.out.print("|-");
+                indent += "| ";
+            }
+            System.out.println(this.value.toString());
+
+            for (int i = 0; i < this.children.size(); i++)
+                this.children.get(i).prettyPrint(indent, i == this.children.size() - 1);
+        }
+    }
+
 }
