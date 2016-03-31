@@ -35,7 +35,7 @@ public class StudentPlayer extends HusPlayer {
         this.UTILITY = Utility.BOARDVALUE2;
         this.MINMAX_TREE_DEPTH = 6;
         this.ALPHABETA_TREE_DEPTH = 7;
-        this.ORDERED_ALPHABETA_TREE_DEPTH = 8;
+        this.ORDERED_ALPHABETA_TREE_DEPTH = 6;
     }
 
     /** This is the primary method that you need to implement.
@@ -44,16 +44,6 @@ public class StudentPlayer extends HusPlayer {
      * for another example agent. */
     public HusMove chooseMove(HusBoardState board_state)
     {
-        // Get the contents of the pits so we can use it to make decisions.
-        int[][] pits = board_state.getPits();
-
-        // Use ``player_id`` and ``opponent_id`` to get my pits and opponent pits.
-        int[] my_pits = pits[player_id];
-        int[] op_pits = pits[opponent_id];
-
-        // Use code stored in ``mytools`` package.
-        getSomething();
-
         HusMove move;
         switch (STRATEGY) {
             case MINMAX:

@@ -8,8 +8,8 @@ public class abPlayer extends StudentPlayer {
     public abPlayer()
     {
         super("ab_player");
-        this.STRATEGY = Strategy.ALPHABETA;
-        this.UTILITY = Utility.BOARDVALUE;
-        this.ALPHABETA_TREE_DEPTH = 7;
+        this.STRATEGY = Strategy.ORDEREDALPHABETA;
+        this.UTILITY = Utility.BOARDVALUE2;
+        this.ALPHABETA_TREE_DEPTH = 6;
     }
 }
