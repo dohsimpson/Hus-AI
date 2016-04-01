@@ -5,6 +5,8 @@ import hus.HusPlayer;
 import hus.HusMove;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static student_player.mytools.MyTools.*;
 import student_player.mytools.MyTools.*;
@@ -20,6 +22,13 @@ public class StudentPlayer extends HusPlayer {
     public int ALPHABETA_TREE_DEPTH;
     public int ORDERED_ALPHABETA_TREE_DEPTH;
     public int FORWARD_ALPHABETA_TREE_DEPTH;
+
+    private boolean timeout;
+    public int TIMEOUT;
+    public int GRACE_TIMEOUT;
+    private boolean firstMove;
+    public int FIRST_MOVE_TIMEOUT;
+    public int GRACE_FIRST_MOVE_TIMEOUT;
 
     /** You must modify this constructor to return your student number.
      * This is important, because this is what the code that runs the
@@ -38,6 +47,12 @@ public class StudentPlayer extends HusPlayer {
         this.ALPHABETA_TREE_DEPTH = 7;
         this.ORDERED_ALPHABETA_TREE_DEPTH = 6;
         this.FORWARD_ALPHABETA_TREE_DEPTH = 200;
+        this.timeout = false;
+        this.TIMEOUT = 2000;
+        this.GRACE_TIMEOUT = TIMEOUT - 100;
+        this.firstMove = true;
+        this.FIRST_MOVE_TIMEOUT = 30000;
+        this.GRACE_FIRST_MOVE_TIMEOUT = FIRST_MOVE_TIMEOUT - 500;
     }
 
     /** This is the primary method that you need to implement.
@@ -46,6 +61,19 @@ public class StudentPlayer extends HusPlayer {
      * for another example agent. */
     public HusMove chooseMove(HusBoardState board_state)
     {
+        Timer timer = new Timer();
+        if (firstMove) {
+            timer.schedule(new TimerTask() {
+                public void run() { timeOut(); }
+            }, GRACE_FIRST_MOVE_TIMEOUT);
+            this.firstMove = false;
+        }
+        else {
+            timer.schedule(new TimerTask() {
+                public void run() { timeOut(); }
+            }, GRACE_TIMEOUT);
+        }
+
         HusMove move;
         switch (STRATEGY) {
             case MINMAX:
@@ -65,6 +93,9 @@ public class StudentPlayer extends HusPlayer {
                 errLog("unimplemented strategy!");
                 break;
         }
+
+        cancelTimeout();
+        timer.cancel();
 
         // But since this is a placeholder algorithm, we won't act on that information.
         return move;
@@ -196,7 +227,7 @@ public class StudentPlayer extends HusPlayer {
     {
         ArrayList<HusMove> moves = board.getLegalMoves();
 
-        if (depth <= 1 || moves.isEmpty())
+        if (this.timeout || depth <= 1 || moves.isEmpty())
             return utilityOfBoard(board);
 
         int maxValue = MIN_VALUE;
@@ -211,7 +242,7 @@ public class StudentPlayer extends HusPlayer {
 
             if (this.STRATEGY == Strategy.FORWARDORDEREDALPHABETA && !isMax && utilityOfBoard(nextBoard) == utilityOfBoard(board)) {
                 v = utilityOfBoard(nextBoard);
-                debugLog("forward pruning: quiescence state with value: " + v);
+                // debugLog("forward pruning: quiescence state with value: " + v);
             }
             else
                 v = orderedAlphaBetaValue(!isMax, nextBoard, depth - 1, alpha, beta);
@@ -261,6 +292,17 @@ public class StudentPlayer extends HusPlayer {
     // -----
 
     // others
+    private void timeOut()
+    {
+        debugLog("timeout!");
+        this.timeout = true;
+    }
+
+    private void cancelTimeout()
+    {
+        this.timeout = false;
+    }
+
     protected void debugLog(String s)
     {
         if (DEBUG) {
