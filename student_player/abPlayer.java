@@ -10,6 +10,6 @@ public class abPlayer extends StudentPlayer {
         super("ab_player");
         this.STRATEGY = Strategy.ORDEREDALPHABETA;
         this.UTILITY = Utility.BOARDVALUE2;
-        this.ALPHABETA_TREE_DEPTH = 6;
+        this.ORDERED_ALPHABETA_TREE_DEPTH = 6;
     }
 }

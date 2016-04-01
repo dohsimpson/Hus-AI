@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 public class MyTools {
-    public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA, FORWARDORDEREDALPHABETA }
+    public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA, FORWARDORDEREDALPHABETA, ITER_ORDEREDALPHABETA }
     public enum Utility { BOARDVALUE, BOARDVALUE2, LEASTOPPONENTMOVES }
 
     public static int MIN_VALUE = Integer.MIN_VALUE;

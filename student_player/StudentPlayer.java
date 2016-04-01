@@ -22,6 +22,7 @@ public class StudentPlayer extends HusPlayer {
     public int ALPHABETA_TREE_DEPTH;
     public int ORDERED_ALPHABETA_TREE_DEPTH;
     public int FORWARD_ALPHABETA_TREE_DEPTH;
+    public int ITER_START_DEPTH;
 
     private boolean timeout;
     public int TIMEOUT;
@@ -41,12 +42,14 @@ public class StudentPlayer extends HusPlayer {
     public StudentPlayer(String s) {
         super(s);
         this.DEBUG = true;
-        this.STRATEGY = Strategy.FORWARDORDEREDALPHABETA;
+        this.STRATEGY = Strategy.ITER_ORDEREDALPHABETA;
         this.UTILITY = Utility.BOARDVALUE2;
         this.MINMAX_TREE_DEPTH = 6;
         this.ALPHABETA_TREE_DEPTH = 7;
-        this.ORDERED_ALPHABETA_TREE_DEPTH = 6;
+        this.ORDERED_ALPHABETA_TREE_DEPTH = 8;
         this.FORWARD_ALPHABETA_TREE_DEPTH = 200;
+        this.ITER_START_DEPTH = 6;
+
         this.timeout = false;
         this.TIMEOUT = 2000;
         this.GRACE_TIMEOUT = TIMEOUT - 100;
@@ -87,6 +90,9 @@ public class StudentPlayer extends HusPlayer {
                 break;
             case FORWARDORDEREDALPHABETA:
                 move = orderedAlphaBetaMove(board_state);
+                break;
+            case ITER_ORDEREDALPHABETA:
+                move = iterOrderedAlphaBetaMove(board_state);
                 break;
             default:
                 move = null;
@@ -204,6 +210,11 @@ public class StudentPlayer extends HusPlayer {
     // ordered alpha-beta pruning + forward pruning
     public HusMove orderedAlphaBetaMove(HusBoardState board)
     {
+        return orderedAlphaBetaMove(board, ORDERED_ALPHABETA_TREE_DEPTH);
+    }
+
+    public HusMove orderedAlphaBetaMove(HusBoardState board, int depth)
+    {
         ArrayList<HusMove> moves = board.getLegalMoves();
         sortMovesByBoards(moves, board, player_id, UTILITY);
         HusMove maxMove = moves.get(0);
@@ -211,7 +222,7 @@ public class StudentPlayer extends HusPlayer {
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
-            int v = orderedAlphaBetaValue(false, nextBoard, ORDERED_ALPHABETA_TREE_DEPTH - 1, MIN_VALUE, MAX_VALUE);
+            int v = orderedAlphaBetaValue(false, nextBoard, depth - 1, MIN_VALUE, MAX_VALUE);
             if (v > maxValue) {
                 maxValue = v;
                 maxMove = m;
@@ -266,6 +277,23 @@ public class StudentPlayer extends HusPlayer {
             return maxValue;
         else
             return minValue;
+    }
+
+    // iterative deepening ordered alpha beta
+    // inspiration: http://logic.stanford.edu/ggp/chapters/chapter_07.html
+    public HusMove iterOrderedAlphaBetaMove(HusBoardState board)
+    {
+        int depth = ITER_START_DEPTH - 1;
+        HusMove ret = board.getLegalMoves().get(0);
+
+        while (!this.timeout && depth < 200) {
+            depth++;
+            HusMove m = orderedAlphaBetaMove(board, depth);
+            if (!this.timeout)
+                ret = m;
+        }
+        debugLog("iter depth: " + depth);
+        return ret;
     }
 
     public int utilityOfBoard(HusBoardState board)
