@@ -87,6 +87,10 @@ public class MyTools {
         }
         return nextBoards;
     }
+    public static ArrayList<HusBoardState> makeNextBoards(HusBoardState board)
+    {
+        return makeNextBoards(board, board.getLegalMoves());
+    }
     public static void sortBoards(ArrayList<HusBoardState> boards, final int player_id, final Utility util)
     {
         boards.sort(new Comparator<HusBoardState>() {
@@ -160,6 +164,26 @@ public class MyTools {
         {
             this.children.add(c);
             return c;
+        }
+
+        public int getDepth()
+        {
+            int max = 0;
+            for (Node<T> nextTree : this.children) {
+                int nextDepth = nextTree.getDepth();
+                if (nextDepth > max)
+                    max = nextDepth;
+            }
+            return 1 + max;
+        }
+
+        public int getSize()
+        {
+            int size = this.children.size();
+            for (Node<T> nextTree : this.children) {
+                size += nextTree.getSize();
+            }
+            return size;
         }
 
         public void prettyPrint(String indent, boolean last)

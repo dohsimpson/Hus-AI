@@ -17,7 +17,7 @@ public class treePlayer extends StudentPlayer {
         super(s);
         this.STRATEGY = Strategy.ORDEREDALPHABETA;
         this.UTILITY = Utility.BOARDVALUE2;
-        this.ORDERED_ALPHABETA_TREE_DEPTH = 4;
+        this.ORDERED_ALPHABETA_TREE_DEPTH = 7;
         this.playTree = new Node<TreeNode>();
     }
     public treePlayer()
@@ -29,15 +29,15 @@ public class treePlayer extends StudentPlayer {
     @Override
     public HusMove chooseMove(HusBoardState board_state)
     {
-        this.playTree.setValue(new TreeNode());
+        resetPlayTree();
 
         HusMove move;
         move = orderedAlphaBetaMove(this.playTree, board_state);
 
-        this.playTree.prettyPrint("", true);
+        // this.playTree.prettyPrint("", true);
 
         // do some analysis here
-        analyzeTree(this.playTree);
+        analyzeTree(board_state, this.playTree);
 
         // But since this is a placeholder algorithm, we won't act on that information.
         return move;
@@ -108,9 +108,30 @@ public class treePlayer extends StudentPlayer {
             return minValue;
     }
 
-    public void analyzeTree(Node<TreeNode> tree)
+    public void analyzeTree(HusBoardState board, Node<TreeNode> tree)
     {
+        double pruneFactor = (double) tree.getSize() / getNumOfBoardNodes(board, tree.getDepth());
+        debugLog("prune factor(less=better): " + tree.getSize() + "/" + getNumOfBoardNodes(board, tree.getDepth()) + " = " + String.format("%.5f", pruneFactor));
+    }
 
+    private static int getNumOfBoardNodes(HusBoardState board, int depth)
+    {
+        int branches = 0;
+        if (depth <= 1)
+            return branches;
+
+        for (HusBoardState nextBoard : makeNextBoards(board)) {
+            branches += getNumOfBoardNodes(nextBoard, depth - 1);
+        }
+        branches += board.getLegalMoves().size();
+
+        return branches;
+    }
+
+    public void resetPlayTree()
+    {
+        this.playTree = new Node<TreeNode>();
+        this.playTree.setValue(new TreeNode());
     }
 
     public static class TreeNode
