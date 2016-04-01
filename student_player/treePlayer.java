@@ -49,13 +49,13 @@ public class treePlayer extends StudentPlayer {
         ArrayList<HusMove> moves = board.getLegalMoves();
         sortMovesByBoards(moves, board, player_id, UTILITY);
         HusMove maxMove = moves.get(0);
-        int maxValue = Integer.MIN_VALUE;
+        int maxValue = MIN_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
 
             Node<TreeNode> nextTree = tree.addChild(new Node<TreeNode>(new TreeNode(m)));
-            int v = orderedAlphaBetaValue(nextTree, false, nextBoard, ORDERED_ALPHABETA_TREE_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            int v = orderedAlphaBetaValue(nextTree, false, nextBoard, ORDERED_ALPHABETA_TREE_DEPTH - 1, MIN_VALUE, MAX_VALUE);
             nextTree.value.setValue(v);
 
             if (v > maxValue) {
@@ -64,7 +64,7 @@ public class treePlayer extends StudentPlayer {
             }
         }
         debugLog("orderd alpha beta move: " + maxMove.getPit());
-        if (maxValue != Integer.MIN_VALUE)
+        if (maxValue != MIN_VALUE)
             debugLog("orderd alpha beta value: " + maxValue);
 
         return maxMove;
@@ -77,8 +77,8 @@ public class treePlayer extends StudentPlayer {
         if (depth <= 1 || moves.isEmpty())
             return utilityOfBoard(board);
 
-        int maxValue = Integer.MIN_VALUE;
-        int minValue = Integer.MAX_VALUE;
+        int maxValue = MIN_VALUE;
+        int minValue = MAX_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);

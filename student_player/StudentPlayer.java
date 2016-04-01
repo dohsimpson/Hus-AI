@@ -75,7 +75,7 @@ public class StudentPlayer extends HusPlayer {
     {
         ArrayList<HusMove> moves = board.getLegalMoves();
         HusMove maxMove = moves.get(0);
-        int maxValue = Integer.MIN_VALUE;
+        int maxValue = MIN_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
@@ -86,7 +86,7 @@ public class StudentPlayer extends HusPlayer {
             }
         }
         debugLog("minmax move: " + maxMove.getPit());
-        if (maxValue != Integer.MIN_VALUE)
+        if (maxValue != MIN_VALUE)
             debugLog("minmax value: " + maxValue);
 
         return maxMove;
@@ -98,8 +98,8 @@ public class StudentPlayer extends HusPlayer {
         if (depth <= 1 || moves.isEmpty())
             return utilityOfBoard(board);
 
-        int maxValue = Integer.MIN_VALUE;
-        int minValue = Integer.MAX_VALUE;
+        int maxValue = MIN_VALUE;
+        int minValue = MAX_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
@@ -120,18 +120,18 @@ public class StudentPlayer extends HusPlayer {
     {
         ArrayList<HusMove> moves = board.getLegalMoves();
         HusMove maxMove = moves.get(0);
-        int maxValue = Integer.MIN_VALUE;
+        int maxValue = MIN_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
-            int v = alphaBetaValue(false, nextBoard, ALPHABETA_TREE_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            int v = alphaBetaValue(false, nextBoard, ALPHABETA_TREE_DEPTH - 1, MIN_VALUE, MAX_VALUE);
             if (v > maxValue) {
                 maxValue = v;
                 maxMove = m;
             }
         }
         debugLog("alpha beta move: " + maxMove.getPit());
-        if (maxValue != Integer.MIN_VALUE)
+        if (maxValue != MIN_VALUE)
             debugLog("alpha beta value: " + maxValue);
 
         return maxMove;
@@ -143,8 +143,8 @@ public class StudentPlayer extends HusPlayer {
         if (depth <= 1 || moves.isEmpty())
             return utilityOfBoard(board);
 
-        int maxValue = Integer.MIN_VALUE;
-        int minValue = Integer.MAX_VALUE;
+        int maxValue = MIN_VALUE;
+        int minValue = MAX_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
@@ -176,18 +176,18 @@ public class StudentPlayer extends HusPlayer {
         ArrayList<HusMove> moves = board.getLegalMoves();
         sortMovesByBoards(moves, board, player_id, UTILITY);
         HusMove maxMove = moves.get(0);
-        int maxValue = Integer.MIN_VALUE;
+        int maxValue = MIN_VALUE;
         for (HusMove m : moves) {
             HusBoardState nextBoard = (HusBoardState) board.clone();
             nextBoard.move(m);
-            int v = orderedAlphaBetaValue(false, nextBoard, ORDERED_ALPHABETA_TREE_DEPTH - 1, Integer.MIN_VALUE, Integer.MAX_VALUE);
+            int v = orderedAlphaBetaValue(false, nextBoard, ORDERED_ALPHABETA_TREE_DEPTH - 1, MIN_VALUE, MAX_VALUE);
             if (v > maxValue) {
                 maxValue = v;
                 maxMove = m;
             }
         }
         debugLog("orderd alpha beta move: " + maxMove.getPit());
-        if (maxValue != Integer.MIN_VALUE)
+        if (maxValue != MIN_VALUE)
             debugLog("orderd alpha beta value: " + maxValue);
 
         return maxMove;
@@ -199,8 +199,8 @@ public class StudentPlayer extends HusPlayer {
         if (depth <= 1 || moves.isEmpty())
             return utilityOfBoard(board);
 
-        int maxValue = Integer.MIN_VALUE;
-        int minValue = Integer.MAX_VALUE;
+        int maxValue = MIN_VALUE;
+        int minValue = MAX_VALUE;
         ArrayList<HusBoardState> nextBoards = makeNextBoards(board, moves);
         sortBoards(nextBoards, player_id, UTILITY);
 

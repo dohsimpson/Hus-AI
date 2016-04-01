@@ -11,6 +11,9 @@ public class MyTools {
     public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA, FORWARDORDEREDALPHABETA }
     public enum Utility { BOARDVALUE, BOARDVALUE2, LEASTOPPONENTMOVES }
 
+    public static int MIN_VALUE = Integer.MIN_VALUE;
+    public static int MAX_VALUE = Integer.MAX_VALUE;
+
     public static double getSomething(){
         return Math.random();
     }
@@ -31,10 +34,10 @@ public class MyTools {
     {
         if (board.gameOver()) {
             if (board.getWinner() == player_id)
-                return Integer.MAX_VALUE;
+                return MAX_VALUE;
             else if (board.getWinner() == board.DRAW) {}
             else
-                return Integer.MIN_VALUE;
+                return MIN_VALUE;
         }
         return boardValue(board, player_id);
     }
@@ -56,7 +59,7 @@ public class MyTools {
     public static int leastBoardValueNextTurn(HusBoardState board, int player_id)
     {
         ArrayList<HusMove> moves = board.getLegalMoves();
-        int minValue = Integer.MAX_VALUE;
+        int minValue = MAX_VALUE;
         for (HusBoardState nextBoard : makeNextBoards(board, moves)) {
             int v = boardValue2(nextBoard, player_id);
             if (v < minValue)
