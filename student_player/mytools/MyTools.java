@@ -10,14 +10,57 @@ import java.util.Comparator;
 import student_player.mytools.tree.*;
 
 public class MyTools {
-    public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA, FORWARDORDEREDALPHABETA, ITER_ORDEREDALPHABETA }
-    public enum Utility { BOARDVALUE, BOARDVALUE2, LEASTOPPONENTMOVES }
-
     public static int MIN_VALUE = Integer.MIN_VALUE;
     public static int MAX_VALUE = Integer.MAX_VALUE;
 
-    public static double getSomething(){
-        return Math.random();
+    public static final int MINMAX            = (int) Math.pow(2, 0);
+    public static final int ALPHABETA_PRUNING = (int) Math.pow(2, 1);
+    public static final int ORDER_MOVES       = (int) Math.pow(2, 2);
+    public static final int FORWARD_PRUNING   = (int) Math.pow(2, 3);
+    public static final int ITER_DEEPENING    = (int) Math.pow(2, 4);
+    public static final int TREE_MEM          = (int) Math.pow(2, 5);
+
+    public static final int BOARD_VALUE       = (int) Math.pow(2, 30);
+
+
+    // strategy helper functions
+    public static String strategyToString(int strategy)
+    {
+        String s = "";
+        if ((strategy & FORWARD_PRUNING) != 0) {
+            s += "f";
+        }
+        if ((strategy & ITER_DEEPENING) != 0) {
+            s += "i";
+        }
+        if ((strategy & ORDER_MOVES) != 0) {
+            s += "o";
+        }
+        if ((strategy & ALPHABETA_PRUNING) != 0) {
+            s += "a";
+        }
+        if ((strategy & TREE_MEM) != 0) {
+            s += "t";
+        }
+
+        s += "$";
+        if ((strategy & BOARD_VALUE) != 0) {
+            s += "b";
+        }
+        return s;
+    }
+
+    // utility helper functions
+    public static int utilityOfBoard(HusBoardState board, int strategy, int player_id)
+    {
+        int ret = 0;
+        if ((strategy & BOARD_VALUE) != 0) {
+            ret = boardValue2(board, player_id);
+        }
+        else {
+            System.err.println("unimplemented strategy!");
+        }
+        return ret;
     }
 
     // utility measure functions
@@ -93,29 +136,17 @@ public class MyTools {
     {
         return makeNextBoards(board, board.getLegalMoves());
     }
-    public static void sortBoards(ArrayList<HusBoardState> boards, final int player_id, final Utility util)
+    public static void sortBoards(ArrayList<HusBoardState> boards, final int player_id, final int strategy)
     {
         boards.sort(new Comparator<HusBoardState>() {
             // sort by descending order
             public int compare(HusBoardState b1, HusBoardState b2) {
-                int ret;
-                switch (util) {
-                    case BOARDVALUE:
-                        ret = boardValue(b2, player_id) - boardValue(b1, player_id);
-                        break;
-                    case LEASTOPPONENTMOVES:
-                        ret = leastOpponentMoves(b2, player_id) - leastOpponentMoves(b1, player_id);
-                        break;
-                    default:
-                        ret = 0;
-                        break;
-                }
-                return ret;
+                return utilityOfBoard(b2, strategy, player_id) - utilityOfBoard(b1, strategy, player_id);
             }
         });
     }
 
-    public static void sortMovesByBoards(ArrayList<HusMove> moves, final HusBoardState board, final int player_id, final Utility util)
+    public static void sortMovesByBoards(ArrayList<HusMove> moves, final HusBoardState board, final int player_id, final int strategy)
     {
         moves.sort(new Comparator<HusMove>() {
             // sort by descending order
@@ -124,18 +155,7 @@ public class MyTools {
                 HusBoardState b1 = makeNextBoard(board, m1);
                 HusBoardState b2 = makeNextBoard(board, m2);
 
-                switch (util) {
-                    case BOARDVALUE:
-                        ret = boardValue(b2, player_id) - boardValue(b1, player_id);
-                        break;
-                    case LEASTOPPONENTMOVES:
-                        ret = leastOpponentMoves(b2, player_id) - leastOpponentMoves(b1, player_id);
-                        break;
-                    default:
-                        ret = 0;
-                        break;
-                }
-                return ret;
+                return utilityOfBoard(b2, strategy, player_id) - utilityOfBoard(b1, strategy, player_id);
             }
         });
     }

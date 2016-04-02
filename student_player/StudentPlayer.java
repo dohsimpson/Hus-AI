@@ -15,15 +15,12 @@ import student_player.mytools.tree.*;
 /** A Hus player submitted by a student. */
 public class StudentPlayer extends HusPlayer {
 
-    protected Strategy STRATEGY;
-    protected Utility UTILITY;
-    protected boolean DEBUG;
+    public int STRATEGY;
+    public String STRATEGY_STRING;
+    public boolean DEBUG;
 
-    public int MINMAX_TREE_DEPTH;
-    public int ALPHABETA_TREE_DEPTH;
-    public int ORDERED_ALPHABETA_TREE_DEPTH;
-    public int FORWARD_ALPHABETA_TREE_DEPTH;
-    public int ITER_START_DEPTH;
+    public int DEFAULT_TREE_DEPTH;
+    public int MAX_TREE_DEPTH;
 
     private boolean timeout;
     public int TIMEOUT;
@@ -46,13 +43,10 @@ public class StudentPlayer extends HusPlayer {
     public StudentPlayer(String s) {
         super(s);
         this.DEBUG = true;
-        this.STRATEGY = Strategy.ORDEREDALPHABETA;
-        this.UTILITY = Utility.BOARDVALUE2;
-        this.MINMAX_TREE_DEPTH = 6;
-        this.ALPHABETA_TREE_DEPTH = 7;
-        this.ORDERED_ALPHABETA_TREE_DEPTH = 6;
-        this.FORWARD_ALPHABETA_TREE_DEPTH = 10;
-        this.ITER_START_DEPTH = 5;
+        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | ITER_DEEPENING | BOARD_VALUE;
+        this.STRATEGY_STRING = strategyToString(STRATEGY);
+        this.DEFAULT_TREE_DEPTH = 6;
+        this.MAX_TREE_DEPTH = 200;
 
         this.timeout = false;
         this.TIMEOUT = 2000;
@@ -71,40 +65,38 @@ public class StudentPlayer extends HusPlayer {
      * for another example agent. */
     public HusMove chooseMove(HusBoardState board_state)
     {
+        // init
         Timer timer = new Timer();
         resetTimer(timer);
         resetMove();
-        resetPlayTree();
 
-        switch (STRATEGY) {
-            case MINMAX:
-                searchMove(board_state, MINMAX_TREE_DEPTH, MINMAX_TREE_DEPTH, false, 0, 0, null);
-                break;
-            case ALPHABETA:
-                searchMove(board_state, ALPHABETA_TREE_DEPTH, ALPHABETA_TREE_DEPTH, false, MIN_VALUE, MAX_VALUE, null);
-                break;
-            case ORDEREDALPHABETA:
-                searchMove(board_state, ORDERED_ALPHABETA_TREE_DEPTH, ORDERED_ALPHABETA_TREE_DEPTH, false, MIN_VALUE, MAX_VALUE, this.playTree);
-                break;
-            case FORWARDORDEREDALPHABETA:
-                searchMove(board_state, FORWARD_ALPHABETA_TREE_DEPTH, FORWARD_ALPHABETA_TREE_DEPTH, false, MIN_VALUE, MAX_VALUE, null);
-                break;
-            case ITER_ORDEREDALPHABETA:
-                searchMove(board_state, ITER_START_DEPTH, ITER_START_DEPTH, true, MIN_VALUE, MAX_VALUE, null);
-                break;
-            default:
-                currentMove = null;
-                errLog("unimplemented strategy!");
-                break;
+        // setup parameters
+        boolean isIterRoot = false;
+        int depth = DEFAULT_TREE_DEPTH;
+        if ((STRATEGY & TREE_MEM) != 0) {
+            resetPlayTree();
+        }
+        if ((STRATEGY & ITER_DEEPENING) != 0) {
+            isIterRoot = true;
+        }
+        if ((STRATEGY & FORWARD_PRUNING) != 0) {
+            depth = MAX_TREE_DEPTH;
         }
 
-        // do an analysis on the search tree, this is usually slow
-        analyzeTree(board_state, this.playTree);
+        // search
+        searchMove(board_state, depth, depth, isIterRoot, MIN_VALUE, MAX_VALUE, this.playTree);
 
+        // analysis
+        // analyze search tree (this is usually slow)
+        if ((STRATEGY & TREE_MEM) != 0) {
+            analyzeTree(board_state, this.playTree);
+        }
+
+        // cleanup
         cancelTimeout();
         timer.cancel();
 
-        // But since this is a placeholder algorithm, we won't act on that information.
+        // return
         return currentMove;
     }
 
@@ -121,13 +113,13 @@ public class StudentPlayer extends HusPlayer {
 
         // return heuristic value
         if (this.timeout || depth <= 1 || moves.isEmpty()) {
-            return utilityOfBoard(board);
+            return utilityOfBoard(board, STRATEGY, player_id);
         }
 
         // iterative deepening
         // inspiration: http://logic.stanford.edu/ggp/chapters/chapter_07.html
         if (isIterRoot) {
-            int maxDepth = 200;
+            int maxDepth = MAX_TREE_DEPTH;
             int iterDepth = -1;
 
             // deepening
@@ -151,9 +143,9 @@ public class StudentPlayer extends HusPlayer {
                 bestValue = MAX_VALUE;
 
             // order moves
-            if (STRATEGY == Strategy.ORDEREDALPHABETA || STRATEGY == Strategy.ITER_ORDEREDALPHABETA || STRATEGY == Strategy.FORWARDORDEREDALPHABETA)
+            if ((STRATEGY & ORDER_MOVES) != 0)
                 // TODO: optimize by returning the boards
-                sortMovesByBoards(moves, board, player_id, UTILITY);
+                sortMovesByBoards(moves, board, player_id, STRATEGY);
 
             /* build tree */
             for (HusMove m : moves) {
@@ -169,8 +161,8 @@ public class StudentPlayer extends HusPlayer {
                 }
 
                 // forward pruning: check for quiescence
-                if (STRATEGY == Strategy.FORWARDORDEREDALPHABETA && !isMax && utilityOfBoard(nextBoard) == utilityOfBoard(board)) {
-                    v = utilityOfBoard(nextBoard);
+                if (((STRATEGY & FORWARD_PRUNING) != 0) && !isMax && utilityOfBoard(nextBoard, STRATEGY, player_id) == utilityOfBoard(board, STRATEGY, player_id)) {
+                    v = utilityOfBoard(nextBoard, STRATEGY, player_id);
                     // debugLog("forward pruning: quiescence state with value: " + v);
                 }
 
@@ -200,7 +192,7 @@ public class StudentPlayer extends HusPlayer {
                 }
 
                 // alpha-beta pruning
-                if (STRATEGY == Strategy.ORDEREDALPHABETA || STRATEGY == Strategy.ALPHABETA || STRATEGY == Strategy.FORWARDORDEREDALPHABETA || STRATEGY == Strategy.ITER_ORDEREDALPHABETA) {
+                if ((STRATEGY & ALPHABETA_PRUNING) != 0) {
                     if (isMax) {
                         if (bestValue >= beta)
                             break;
@@ -231,30 +223,6 @@ public class StudentPlayer extends HusPlayer {
         // return value
         return bestValue;
     }
-
-
-    public int utilityOfBoard(HusBoardState board)
-    {
-        int ret;
-        switch (UTILITY) {
-            case BOARDVALUE:
-                ret = boardValue(board, player_id);
-                break;
-            case BOARDVALUE2:
-                ret = boardValue2(board, player_id);
-                break;
-            case LEASTOPPONENTMOVES:
-                ret = leastOpponentMoves(board, player_id);
-                break;
-            default:
-                ret = 0;
-                errLog("unimplemented strategy!");
-                break;
-        }
-        return ret;
-    }
-
-    // -----
 
     // others
     private void timeOut()
@@ -294,22 +262,22 @@ public class StudentPlayer extends HusPlayer {
         this.playTree.setValue(new TreeNode());
     }
 
-    protected void debugLog(String s)
+    public void debugLog(String s)
     {
         if (DEBUG) {
-            System.err.println("[" + player_id + "|" + STRATEGY.toString() + "|" + UTILITY.toString() + "] " + s);
+            System.err.println(String.format("[%s] %s", STRATEGY_STRING, s));
         }
     }
 
     public void debugLogMove(HusMove move, int value)
     {
         if (DEBUG) {
-            String s = String.format("<%d/%s/%s/%d/%d>", player_id, STRATEGY.toString(), UTILITY.toString(), move.getPit(), value);
+            String s = String.format("<%d/%s/%d/%d>", player_id, STRATEGY_STRING, move.getPit(), value);
             System.err.println(s);
         }
     }
 
-    protected void errLog(String s)
+    public void errLog(String s)
     {
         System.err.println("[ERROR] " + s);
     }

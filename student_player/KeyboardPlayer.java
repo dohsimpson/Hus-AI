@@ -47,9 +47,6 @@ public class KeyboardPlayer extends StudentPlayer {
         int[] my_pits = pits[player_id];
         int[] op_pits = pits[opponent_id];
 
-        // Use code stored in ``mytools`` package.
-        MyTools.getSomething();
-
         debugLog("board(" + board_state.getTurnNumber() + "): \n" + convertBoardToString(board_state));
 
         // Get the legal moves for the current board state.
@@ -71,11 +68,7 @@ public class KeyboardPlayer extends StudentPlayer {
             if (inputInt < 0) {
                 switch (inputInt) {
                     case -1:
-                        move = orderedAlphaBetaMove(board_state);
-                        break;
-                    case -2:
-                        treePlayer tree = new treePlayer();
-                        move = tree.chooseMove(board_state);
+                        move = super.chooseMove(board_state);
                         break;
                 }
                 dryRun = true;
@@ -95,7 +88,7 @@ public class KeyboardPlayer extends StudentPlayer {
                 // We can see the effects of a move like this...
                 HusBoardState cloned_board_state = (HusBoardState) board_state.clone();
                 cloned_board_state.move(move);
-                debugLog("board(" + cloned_board_state.getTurnNumber() + ")*: \n" + convertUpdatedBoardToString(board_state, cloned_board_state));
+                debugLog("board(" + cloned_board_state.getTurnNumber() + ")*: " + move.getPit() + "\n" + convertUpdatedBoardToString(board_state, cloned_board_state));
                 move = null;
             }
         }
@@ -258,12 +251,6 @@ public class KeyboardPlayer extends StudentPlayer {
     {
         int i = scanner.nextInt();
         return i;
-    }
-
-    @Override
-    protected void debugLog(String s)
-    {
-        System.err.println(s);
     }
 
     private String padRight(String s, int n) {
