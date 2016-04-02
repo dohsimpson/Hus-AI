@@ -7,6 +7,8 @@ import hus.HusMove;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+import student_player.mytools.tree.*;
+
 public class MyTools {
     public enum Strategy { MINMAX, ALPHABETA, ORDEREDALPHABETA, FORWARDORDEREDALPHABETA, ITER_ORDEREDALPHABETA }
     public enum Utility { BOARDVALUE, BOARDVALUE2, LEASTOPPONENTMOVES }
@@ -138,72 +140,19 @@ public class MyTools {
         });
     }
 
-    // tree implementation
-    // source: http://stackoverflow.com/questions/3522454/java-tree-data-structure
-    public static class Node<T> {
-        public T value;
-        public ArrayList<Node<T>> children;
+    /** recursively sum up number of all legal moves until depth.
+     * Used for calculating the prune factor of the search tree. **/
+    public static int getNumOfBoardNodes(HusBoardState board, int depth)
+    {
+        int branches = 0;
+        if (depth <= 1)
+            return branches;
 
-        public Node()
-        {
-            this.children = new ArrayList<Node<T>>();
+        for (HusBoardState nextBoard : makeNextBoards(board)) {
+            branches += getNumOfBoardNodes(nextBoard, depth - 1);
         }
+        branches += board.getLegalMoves().size();
 
-        public Node(T v)
-        {
-            this.value = v;
-            this.children = new ArrayList<Node<T>>();
-        }
-
-        public void setValue(T v)
-        {
-            this.value = v;
-        }
-
-        public Node<T> addChild(Node<T> c)
-        {
-            this.children.add(c);
-            return c;
-        }
-
-        public int getDepth()
-        {
-            int max = 0;
-            for (Node<T> nextTree : this.children) {
-                int nextDepth = nextTree.getDepth();
-                if (nextDepth > max)
-                    max = nextDepth;
-            }
-            return 1 + max;
-        }
-
-        public int getSize()
-        {
-            int size = this.children.size();
-            for (Node<T> nextTree : this.children) {
-                size += nextTree.getSize();
-            }
-            return size;
-        }
-
-        public void prettyPrint(String indent, boolean last)
-        {
-            System.out.print(indent);
-            if (last)
-            {
-                System.out.print("\\-");
-                indent += "  ";
-            }
-            else
-            {
-                System.out.print("|-");
-                indent += "| ";
-            }
-            System.out.println(this.value.toString());
-
-            for (int i = 0; i < this.children.size(); i++)
-                this.children.get(i).prettyPrint(indent, i == this.children.size() - 1);
-        }
+        return branches;
     }
-
 }
