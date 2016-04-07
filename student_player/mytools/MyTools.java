@@ -21,17 +21,18 @@ public class MyTools {
     public static final int ITER_DEEPENING     = (int) Math.pow(2, 4);
     public static final int TREE_MEM           = (int) Math.pow(2, 5);
     public static final int QLEARNING          = (int) Math.pow(2, 6);
-    public static final int USE_TIMEOUT        = (int) Math.pow(2, 7);
+    public static final int USE_EPSILON        = (int) Math.pow(2, 7);
+    public static final int USE_TIMEOUT        = (int) Math.pow(2, 8);
 
     public static final int BOARD_VALUE        = (int) Math.pow(2, 30);
     public static final int QVALUE             = (int) Math.pow(2, 29);
 
     public static final double EPSILON            = 0.05;
     public static final double EPSILON_ADJUSTMENT = 0.001;
-    public static final double ALPHA              = 0.0000001;
+    public static final double ALPHA              = 0.000000001;
     public static final double WIN_REWARD         = 1000.0;
     public static final double REWARD_DEC         = 0.4;
-    public static final int NUMBER_OF_FEATURES    = 2;
+    public static final int NUMBER_OF_FEATURES    = 4;
 
 
     // strategy helper functions
@@ -136,6 +137,30 @@ public class MyTools {
         return ret;
     }
 
+    public static int numOfMyFrontRows(HusBoardState board, int player_id)
+    {
+        int ret = 0;
+        int[][] pits = board.getPits();
+        int[] my_pits = pits[player_id];
+        for (int i = board.BOARD_WIDTH; i < my_pits.length; i++) {
+            if (my_pits[i] > 1)
+                ret++;
+        }
+        return ret;
+    }
+
+    public static int numOfOppoFrontRows(HusBoardState board, int player_id)
+    {
+        int ret = 0;
+        int[][] pits = board.getPits();
+        int[] opponent_pits = pits[1 - player_id];
+        for (int i = board.BOARD_WIDTH; i < opponent_pits.length; i++) {
+            if (opponent_pits[i] > 1)
+                ret++;
+        }
+        return ret;
+    }
+
     public static double evaluateStatesCheckWin(int[] states, HusBoardState board, int player_id, double[] theta)
     {
         if (board.getWinner() == player_id) {
@@ -184,15 +209,18 @@ public class MyTools {
             states[1] = leastOpponentMoves(board, player_id);
         }
 
-        // // feature 3
-        // {
-        //     states[2] = mostMyMoves(board, this.player_id);
-        // }
+        // feature 3
+        {
+            states[2] = numOfMyFrontRows(board, player_id);
+        }
 
-        // // feature 4
-        // {
-        //     states[3] = boardValue(board, 1 - this.player_id);
-        // }
+        // feature 4
+        {
+            states[3] = numOfOppoFrontRows(board, player_id);
+        }
+
+        // TODO: divide up front row
+        // TODO: number of front rows that are vulnerable
 
         return states;
     }
@@ -335,10 +363,11 @@ public class MyTools {
      * used by learning
      * input: alpha is the learning rate
     **/
-    public static double[] getUpdatedTheta(double alpha, double[] theta, double reward, int[] states)
+    public static double[] getUpdatedTheta(double alpha, double[] theta, double reward, double rewardNext, int[] states)
     {
         double evalUtil = evaluateStates(states, theta);
         double[] ret    = new double[theta.length];
+        double delta    = 1.0;
 
         // System.out.println("look0:" + Arrays.toString(states));
         // System.out.println("look1:" + evalUtil);
@@ -347,7 +376,7 @@ public class MyTools {
         assert NUMBER_OF_FEATURES == theta.length - 1;
         assert NUMBER_OF_FEATURES == ret.length - 1;
         for (int i = 0; i < NUMBER_OF_FEATURES; i++) {
-            ret[i] = theta[i] + alpha*(reward - evalUtil)*states[i];
+            ret[i] = theta[i] + alpha*(reward + delta*rewardNext - evalUtil)*states[i];
         }
         ret[ret.length-1] = theta[theta.length-1] + alpha*(reward - evalUtil);
 
@@ -376,7 +405,8 @@ public class MyTools {
         public int compareTo(MoveWithBoard mb2)
         {
             assert (mb2.board != this.board || mb2.move != this.move);
-            return utilityOfBoard(this.board, this.strategy, this.player_id, this.theta) - utilityOfBoard(mb2.board, mb2.strategy, mb2.player_id, mb2.theta);
+            // descending
+            return  utilityOfBoard(mb2.board, mb2.strategy, mb2.player_id, mb2.theta) - utilityOfBoard(this.board, this.strategy, this.player_id, this.theta);
         }
     }
 

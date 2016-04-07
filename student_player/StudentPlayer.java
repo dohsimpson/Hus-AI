@@ -48,8 +48,9 @@ public class StudentPlayer extends HusPlayer {
 
     public StudentPlayer(String s) {
         super(s);
-        this.DEBUG = false;
-        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | ITER_DEEPENING | USE_TIMEOUT | QLEARNING | QVALUE;
+        this.DEBUG = true;
+        // this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | ITER_DEEPENING | USE_TIMEOUT | QLEARNING | QVALUE;
+        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | QVALUE;
         this.STRATEGY_STRING = strategyToString(STRATEGY);
         this.DEFAULT_TREE_DEPTH = 6;
         this.MAX_TREE_DEPTH = 200;
@@ -66,7 +67,8 @@ public class StudentPlayer extends HusPlayer {
         this.playTree = null;
 
         if ((STRATEGY & QVALUE) != 0) {
-            this.theta = new double[]{5.72693573040735, 3.153639419380099, -0.3028095978792035};
+            this.theta = new double[]{16.846993064132395, 5.405659445092267, 1.6387093565793258, -0.9353409755101405, -0.42860517112238866};
+            // this.theta = new double[]{0, -1, 1, 1, 1};
         }
         else {
             this.theta = null;
@@ -74,6 +76,8 @@ public class StudentPlayer extends HusPlayer {
 
         if ((STRATEGY & QLEARNING) != 0) {
             this.stateChain = new ArrayList<int[]>();
+        }
+        if ((STRATEGY & USE_EPSILON) != 0) {
             this.epsilon = EPSILON;
         }
         else {
@@ -110,7 +114,7 @@ public class StudentPlayer extends HusPlayer {
 
         // search
         searchMove(board_state, depth, depth, isIterRoot, MIN_VALUE, MAX_VALUE, this.playTree);
-        if ((STRATEGY & QLEARNING) != 0) {
+        if ((STRATEGY & USE_EPSILON) != 0) {
             ArrayList<HusMove> moves = board_state.getLegalMoves();
             this.currentMove = epsilonGreedyAction(moves, this.currentMove, this.epsilon);
         }
@@ -171,6 +175,10 @@ public class StudentPlayer extends HusPlayer {
 
         // return heuristic value
         if (this.timeout || depth <= 1 || moves.isEmpty()) {
+            // not using search tree
+            if (isRoot && this.currentMove == null) {
+                this.currentMove = sortMovesByBoards(moves, board, player_id, STRATEGY, this.theta).get(0).move;
+            }
             return utilityOfBoard(board, STRATEGY, player_id, this.theta);
         }
 
@@ -279,7 +287,7 @@ public class StudentPlayer extends HusPlayer {
                 bestMove = moves.get(0);
             this.currentMove = bestMove;
             // log
-            debugLogMove(bestMove, bestValue);
+            // debugLogMove(bestMove, bestValue);
         }
 
         // return value
@@ -332,17 +340,24 @@ public class StudentPlayer extends HusPlayer {
             // update theta
             debugLog("original: " + Arrays.toString(this.theta));
             for (int i = 0; i < this.stateChain.size(); i++) {
-                this.theta = getUpdatedTheta(ALPHA, this.theta, rewardChain[i], stateChain.get(i));
+                // terminal
+                if (i == this.stateChain.size() - 1) {
+                    this.theta = getUpdatedTheta(ALPHA, this.theta, rewardChain[i], rewardChain[i], stateChain.get(i));
+                }
+                // non-terminal
+                else {
+                    this.theta = getUpdatedTheta(ALPHA, this.theta, rewardChain[i], rewardChain[i+1], stateChain.get(i));
+                }
                 // System.out.println(i + ": " + Arrays.toString(this.theta));
             }
 
             // adjust epsilon
-            if (winner == this.player_id) {
-                this.epsilon -= EPSILON_ADJUSTMENT;  // less likely to explore
-            }
-            else {
-                this.epsilon += EPSILON_ADJUSTMENT;  // more likely to explore
-            }
+            // if (winner == this.player_id) {
+            //     this.epsilon -= EPSILON_ADJUSTMENT;  // less likely to explore
+            // }
+            // else {
+            //     this.epsilon += EPSILON_ADJUSTMENT;  // more likely to explore
+            // }
         }
         else {
             System.err.println("qlearning disabled");

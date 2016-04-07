@@ -13,6 +13,7 @@ public class Forever
 {
     public static void main (String[] args) {
         StudentPlayer p1 = new StudentPlayer();
+        // StudentPlayer p2 = new StudentPlayer();
         p1.setColor(0);
         double p1Wins = 0;
         double p2Wins = 0;
@@ -37,6 +38,8 @@ public class Forever
             }
             p1.qlearn(board.getWinner());
             p1.gameOverCleanUp(board.getWinner());
+            // p2.qlearn(board.getWinner());
+            // p2.gameOverCleanUp(board.getWinner());
             // p1.learningLog2(board.getWinner());
             if (board.getWinner() != Board.DRAW) {
                 if (board.getWinner() == 0) { // player0 won
