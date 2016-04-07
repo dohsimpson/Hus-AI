@@ -23,6 +23,7 @@ public class StudentPlayer extends HusPlayer {
     public int DEFAULT_TREE_DEPTH;
     public int MAX_TREE_DEPTH;
 
+    public Timer timer;
     private boolean timeout;
     public int TIMEOUT;
     public int GRACE_TIMEOUT;
@@ -48,28 +49,34 @@ public class StudentPlayer extends HusPlayer {
     public StudentPlayer(String s) {
         super(s);
         this.DEBUG = false;
-        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | QLEARNING | QVALUE;
+        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | ITER_DEEPENING | USE_TIMEOUT | QLEARNING | QVALUE;
         this.STRATEGY_STRING = strategyToString(STRATEGY);
         this.DEFAULT_TREE_DEPTH = 6;
         this.MAX_TREE_DEPTH = 200;
 
-        this.timeout = false;
-        this.TIMEOUT = 2000;
-        this.GRACE_TIMEOUT = TIMEOUT - 100;
-        this.firstMove = true;
-        this.FIRST_MOVE_TIMEOUT = 30000;
+        this.timer                    = null;
+        this.timeout                  = false;
+        this.TIMEOUT                  = 2000;
+        this.GRACE_TIMEOUT            = TIMEOUT - 100;
+        this.firstMove                = false;  // TODO: change this back
+        this.FIRST_MOVE_TIMEOUT       = 30000;
         this.GRACE_FIRST_MOVE_TIMEOUT = FIRST_MOVE_TIMEOUT - 500;
 
         this.currentMove = null;
         this.playTree = null;
 
-        if ((STRATEGY & QLEARNING) != 0) {
+        if ((STRATEGY & QVALUE) != 0) {
             this.theta = new double[]{5.72693573040735, 3.153639419380099, -0.3028095978792035};
+        }
+        else {
+            this.theta = null;
+        }
+
+        if ((STRATEGY & QLEARNING) != 0) {
             this.stateChain = new ArrayList<int[]>();
             this.epsilon = EPSILON;
         }
         else {
-            this.theta = null;
             this.stateChain = null;
         }
     }
@@ -81,9 +88,12 @@ public class StudentPlayer extends HusPlayer {
     public HusMove chooseMove(HusBoardState board_state)
     {
         // init
-        // Timer timer = new Timer();
-        // resetTimer(timer);
-        // resetMove();
+        if ((STRATEGY & USE_TIMEOUT) != 0) {
+            timer = new Timer();
+            resetTimer(timer);
+        }
+
+        resetMove();
 
         // setup parameters
         boolean isIterRoot = false;
@@ -117,8 +127,10 @@ public class StudentPlayer extends HusPlayer {
         }
 
         // cleanup
-        // cancelTimeout();
-        // timer.cancel();
+        if ((STRATEGY & USE_TIMEOUT) != 0) {
+            cancelTimeout();
+            timer.cancel();
+        }
 
         // return
         return currentMove;
@@ -189,15 +201,19 @@ public class StudentPlayer extends HusPlayer {
                 bestValue = MAX_VALUE;
 
             // order moves
-            if ((STRATEGY & ORDER_MOVES) != 0)
-                // TODO: optimize by returning the boards
-                sortMovesByBoards(moves, board, player_id, STRATEGY, this.theta);
+            ArrayList<MoveWithBoard> moveWithBoards = null;
+            if ((STRATEGY & ORDER_MOVES) != 0) {
+                moveWithBoards = sortMovesByBoards(moves, board, player_id, STRATEGY, this.theta);
+            }
+            else {
+                moveWithBoards = makeMoveWithBoards(board, moves, player_id, STRATEGY, this.theta);
+            }
 
             /* build tree */
-            for (HusMove m : moves) {
+            for (int i = 0; i < moveWithBoards.size(); i++) {
                 int v;
-                HusBoardState nextBoard = (HusBoardState) board.clone();
-                nextBoard.move(m);
+                HusMove m = moveWithBoards.get(i).move;
+                HusBoardState nextBoard = moveWithBoards.get(i).board;
                 Node<TreeNode> nextTree = null;
 
                 // tree memorization
@@ -319,6 +335,14 @@ public class StudentPlayer extends HusPlayer {
                 this.theta = getUpdatedTheta(ALPHA, this.theta, rewardChain[i], stateChain.get(i));
                 // System.out.println(i + ": " + Arrays.toString(this.theta));
             }
+
+            // adjust epsilon
+            if (winner == this.player_id) {
+                this.epsilon -= EPSILON_ADJUSTMENT;  // less likely to explore
+            }
+            else {
+                this.epsilon += EPSILON_ADJUSTMENT;  // more likely to explore
+            }
         }
         else {
             System.err.println("qlearning disabled");
@@ -330,13 +354,6 @@ public class StudentPlayer extends HusPlayer {
     {
         // empty stateChain
         this.stateChain = new ArrayList<int[]>();
-        // adjust epsilon
-        if (winner == this.player_id) {
-            this.epsilon -= EPSILON_ADJUSTMENT;  // less likely to explore
-        }
-        else {
-            this.epsilon += EPSILON_ADJUSTMENT;  // more likely to explore
-        }
     }
 
     public void debugLog(String s)

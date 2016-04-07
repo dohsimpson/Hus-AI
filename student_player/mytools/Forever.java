@@ -49,6 +49,7 @@ public class Forever
 
             // System.err.println("winner" + board.getWinner() + " p1 win rate: " + p1Wins/p2Wins);
             System.err.println("winner" + board.getWinner() + " p1/p2: " + p1Wins +"/" + p2Wins + " = " + p1Wins/p2Wins);
+            System.err.println("epsilon: " + p1.epsilon);
             // try{
             //     Thread.sleep(1000);
             // }

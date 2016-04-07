@@ -6,6 +6,7 @@ import hus.HusMove;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
 
 import student_player.mytools.tree.*;
 
@@ -20,12 +21,13 @@ public class MyTools {
     public static final int ITER_DEEPENING     = (int) Math.pow(2, 4);
     public static final int TREE_MEM           = (int) Math.pow(2, 5);
     public static final int QLEARNING          = (int) Math.pow(2, 6);
+    public static final int USE_TIMEOUT        = (int) Math.pow(2, 7);
 
     public static final int BOARD_VALUE        = (int) Math.pow(2, 30);
     public static final int QVALUE             = (int) Math.pow(2, 29);
 
     public static final double EPSILON            = 0.05;
-    public static final double EPSILON_ADJUSTMENT = 0.01;
+    public static final double EPSILON_ADJUSTMENT = 0.001;
     public static final double ALPHA              = 0.0000001;
     public static final double WIN_REWARD         = 1000.0;
     public static final double REWARD_DEC         = 0.4;
@@ -232,6 +234,21 @@ public class MyTools {
     {
         return makeNextBoards(board, board.getLegalMoves());
     }
+
+    public static ArrayList<MoveWithBoard> makeMoveWithBoards(HusBoardState board, ArrayList<HusMove> moves, int player_id, int strategy, double[] theta)
+    {
+        ArrayList<MoveWithBoard> moveWithBoards = new ArrayList<MoveWithBoard>();
+        for (HusMove m: moves) {
+            MoveWithBoard mb = new MoveWithBoard(makeNextBoard(board, m), m, strategy, player_id, theta);
+            moveWithBoards.add(mb);
+        }
+
+        assert moveWithBoards.get(0).move == moves.get(0);
+        assert moveWithBoards.size() == moves.size();
+
+        return moveWithBoards;
+    }
+
     public static void sortBoards(ArrayList<HusBoardState> boards, final int player_id, final int strategy, final double[] theta)
     {
         boards.sort(new Comparator<HusBoardState>() {
@@ -242,18 +259,14 @@ public class MyTools {
         });
     }
 
-    public static void sortMovesByBoards(ArrayList<HusMove> moves, final HusBoardState board, final int player_id, final int strategy, final double[] theta)
+    public static ArrayList<MoveWithBoard> sortMovesByBoards(ArrayList<HusMove> moves, final HusBoardState board, final int player_id, final int strategy, final double[] theta)
     {
-        moves.sort(new Comparator<HusMove>() {
-            // sort by descending order
-            public int compare(HusMove m1, HusMove m2) {
-                int ret;
-                HusBoardState b1 = makeNextBoard(board, m1);
-                HusBoardState b2 = makeNextBoard(board, m2);
+        ArrayList<MoveWithBoard> moveWithBoards = makeMoveWithBoards(board, moves, player_id, strategy, theta);
+        assert moveWithBoards.get(0).move == moves.get(0);
 
-                return utilityOfBoard(b2, strategy, player_id, theta) - utilityOfBoard(b1, strategy, player_id, theta);
-            }
-        });
+        Collections.sort(moveWithBoards);
+
+        return moveWithBoards;
     }
 
     /** recursively sum up number of all legal moves until depth.
@@ -341,5 +354,30 @@ public class MyTools {
         return ret;
     }
 
+    /** MoveWithBoard class is for efficient sorting */
+    public static class MoveWithBoard implements Comparable<MoveWithBoard>
+    {
+        public final HusBoardState board;
+        public final HusMove move;
+        public final int strategy;
+        public final int player_id;
+        public final double[] theta;
+
+        public MoveWithBoard(HusBoardState board, HusMove move, int strategy, int player_id, double[] theta)
+        {
+            this.board = board;
+            this.move = move;
+            this.strategy = strategy;
+            this.player_id = player_id;
+            this.theta = theta;
+        }
+
+        @Override
+        public int compareTo(MoveWithBoard mb2)
+        {
+            assert (mb2.board != this.board || mb2.move != this.move);
+            return utilityOfBoard(this.board, this.strategy, this.player_id, this.theta) - utilityOfBoard(mb2.board, mb2.strategy, mb2.player_id, mb2.theta);
+        }
+    }
 
 }
