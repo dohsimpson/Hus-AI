@@ -12,12 +12,12 @@ import student_player.mytools.MyTools;
 public class Forever
 {
     public static void main (String[] args) {
-        RLPlayer p1 = new RLPlayer();
+        StudentPlayer p1 = new StudentPlayer();
         p1.setColor(0);
         double p1Wins = 0;
         double p2Wins = 0;
         while (true) {
-            StudentPlayer p2 = new StudentPlayer();
+            StudentPlayer2 p2 = new StudentPlayer2();
             // RandomHusPlayer p2 = new RandomHusPlayer();
             p2.setColor(1);
 
@@ -35,8 +35,8 @@ public class Forever
                     nextPlayer = p1;
                 }
             }
-            p1.learn(board.getWinner());
-            p1.cleanup();
+            p1.qlearn(board.getWinner());
+            p1.gameOverCleanUp(board.getWinner());
             // p1.learningLog2(board.getWinner());
             if (board.getWinner() != Board.DRAW) {
                 if (board.getWinner() == 0) { // player0 won

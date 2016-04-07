@@ -7,6 +7,7 @@ import hus.HusMove;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Arrays;
 
 import static student_player.mytools.MyTools.*;
 import student_player.mytools.MyTools.*;
@@ -32,6 +33,10 @@ public class StudentPlayer extends HusPlayer {
     public HusMove currentMove;
     public Node<TreeNode> playTree;
 
+    public double[] theta;
+    public ArrayList<int[]> stateChain;
+    public double epsilon;
+
     /** You must modify this constructor to return your student number.
      * This is important, because this is what the code that runs the
      * competition uses to associate you with your agent.
@@ -43,9 +48,9 @@ public class StudentPlayer extends HusPlayer {
     public StudentPlayer(String s) {
         super(s);
         this.DEBUG = false;
-        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | BOARD_VALUE;
+        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | QLEARNING | QVALUE;
         this.STRATEGY_STRING = strategyToString(STRATEGY);
-        this.DEFAULT_TREE_DEPTH = 5;
+        this.DEFAULT_TREE_DEPTH = 6;
         this.MAX_TREE_DEPTH = 200;
 
         this.timeout = false;
@@ -57,6 +62,16 @@ public class StudentPlayer extends HusPlayer {
 
         this.currentMove = null;
         this.playTree = null;
+
+        if ((STRATEGY & QLEARNING) != 0) {
+            this.theta = new double[]{5.72693573040735, 3.153639419380099, -0.3028095978792035};
+            this.stateChain = new ArrayList<int[]>();
+            this.epsilon = EPSILON;
+        }
+        else {
+            this.theta = null;
+            this.stateChain = null;
+        }
     }
 
     /** This is the primary method that you need to implement.
@@ -85,11 +100,20 @@ public class StudentPlayer extends HusPlayer {
 
         // search
         searchMove(board_state, depth, depth, isIterRoot, MIN_VALUE, MAX_VALUE, this.playTree);
+        if ((STRATEGY & QLEARNING) != 0) {
+            ArrayList<HusMove> moves = board_state.getLegalMoves();
+            this.currentMove = epsilonGreedyAction(moves, this.currentMove, this.epsilon);
+        }
 
         // analysis
         // analyze search tree (this is usually slow)
         if ((STRATEGY & TREE_MEM) != 0) {
             analyzeTree(board_state, this.playTree);
+        }
+
+        // learn
+        if ((STRATEGY & QLEARNING) != 0) {
+            stateChain.add(getStates(board_state, this.player_id));
         }
 
         // cleanup
@@ -98,6 +122,28 @@ public class StudentPlayer extends HusPlayer {
 
         // return
         return currentMove;
+    }
+
+    /** use epsilon greedy to choose move
+    * input: moves is the current legal moves
+    * input: topMove is the action that yields the best utility state
+    * input: epsilon is between 0 and 1, indicating likelihood to choose at random
+    * return: the action
+    **/
+    public HusMove epsilonGreedyAction(ArrayList<HusMove> moves, HusMove topMove, double epsilon)
+    {
+        double r = Math.random();
+        HusMove ret;
+
+        if (r < epsilon) {
+            int index = (int) Math.random() * moves.size();
+            ret = moves.get(index);
+        }
+        else {
+            ret = topMove;
+        }
+
+        return ret;
     }
 
     /** a combined search method that can use minmax, alphabeta pruning, heuristic move ordering,
@@ -113,7 +159,7 @@ public class StudentPlayer extends HusPlayer {
 
         // return heuristic value
         if (this.timeout || depth <= 1 || moves.isEmpty()) {
-            return utilityOfBoard(board, STRATEGY, player_id);
+            return utilityOfBoard(board, STRATEGY, player_id, this.theta);
         }
 
         // iterative deepening
@@ -145,7 +191,7 @@ public class StudentPlayer extends HusPlayer {
             // order moves
             if ((STRATEGY & ORDER_MOVES) != 0)
                 // TODO: optimize by returning the boards
-                sortMovesByBoards(moves, board, player_id, STRATEGY);
+                sortMovesByBoards(moves, board, player_id, STRATEGY, this.theta);
 
             /* build tree */
             for (HusMove m : moves) {
@@ -161,8 +207,8 @@ public class StudentPlayer extends HusPlayer {
                 }
 
                 // forward pruning: check for quiescence
-                if (((STRATEGY & FORWARD_PRUNING) != 0) && !isMax && utilityOfBoard(nextBoard, STRATEGY, player_id) == utilityOfBoard(board, STRATEGY, player_id)) {
-                    v = utilityOfBoard(nextBoard, STRATEGY, player_id);
+                if (((STRATEGY & FORWARD_PRUNING) != 0) && !isMax && utilityOfBoard(nextBoard, STRATEGY, player_id, this.theta) == utilityOfBoard(board, STRATEGY, player_id, this.theta)) {
+                    v = utilityOfBoard(nextBoard, STRATEGY, player_id, this.theta);
                     // debugLog("forward pruning: quiescence state with value: " + v);
                 }
 
@@ -260,6 +306,37 @@ public class StudentPlayer extends HusPlayer {
     {
         this.playTree = new Node<TreeNode>();
         this.playTree.setValue(new TreeNode());
+    }
+
+    public void qlearn(int winner)
+    {
+        if ((STRATEGY & QLEARNING) != 0) {
+            double[] rewardChain = getRewardChain(this.stateChain, this.player_id, winner);
+
+            // update theta
+            debugLog("original: " + Arrays.toString(this.theta));
+            for (int i = 0; i < this.stateChain.size(); i++) {
+                this.theta = getUpdatedTheta(ALPHA, this.theta, rewardChain[i], stateChain.get(i));
+                // System.out.println(i + ": " + Arrays.toString(this.theta));
+            }
+        }
+        else {
+            System.err.println("qlearning disabled");
+        }
+    }
+
+    // this is called after learning is done
+    public void gameOverCleanUp(int winner)
+    {
+        // empty stateChain
+        this.stateChain = new ArrayList<int[]>();
+        // adjust epsilon
+        if (winner == this.player_id) {
+            this.epsilon -= EPSILON_ADJUSTMENT;  // less likely to explore
+        }
+        else {
+            this.epsilon += EPSILON_ADJUSTMENT;  // more likely to explore
+        }
     }
 
     public void debugLog(String s)
