@@ -99,6 +99,18 @@ public class MyTools {
         return ret;
     }
 
+    public static int mostMyMoves(HusBoardState board, int player_id)
+    {
+        int ret = 0;
+        int[][] pits = board.getPits();
+        int[] my_pits = pits[player_id];
+        for (int i : my_pits) {
+            if (i > 1)
+                ret++;
+        }
+        return ret;
+    }
+
     // others
     /** this method differs from boardValue in that it is the opponent's turn **/
     public static int leastBoardValueNextTurn(HusBoardState board, int player_id)
@@ -174,5 +186,22 @@ public class MyTools {
         branches += board.getLegalMoves().size();
 
         return branches;
+    }
+
+    public static int[] serializeBoard(HusBoardState board, int player_id)
+    {
+        int[] ret = new int[board.BOARD_WIDTH*4];
+        int[][] pits = board.getPits();
+        int[] my_pits = pits[player_id];
+        int[] opponent_pits = pits[1 - player_id];
+
+        for (int i = 0; i < 2*board.BOARD_WIDTH; i++) {
+            ret[i] = my_pits[i]+1;
+        }
+        for (int i = 0, j = 2*board.BOARD_WIDTH; i < 2*board.BOARD_WIDTH; i++, j++) {
+            ret[j] = opponent_pits[i]+1;
+        }
+
+        return ret;
     }
 }

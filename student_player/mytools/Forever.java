@@ -1,81 +1,91 @@
 package student_player.mytools;
 
 import hus.HusPlayer;
-
-import java.io.IOException;
+import hus.HusBoardState;
+import hus.HusMove;
+import hus.RandomHusPlayer;
+import boardgame.Move;
+import boardgame.Board;
+import student_player.*;
+import student_player.mytools.MyTools;
 
 public class Forever
 {
-    protected static String p1 = "hus.RandomHusPlayer";
-    protected static String p2 = "hus.RandomHusPlayer";
+    public static void main (String[] args) {
+        RLPlayer p1 = new RLPlayer();
+        p1.setColor(0);
+        double p1Wins = 0;
+        double p2Wins = 0;
+        while (true) {
+            StudentPlayer p2 = new StudentPlayer();
+            // RandomHusPlayer p2 = new RandomHusPlayer();
+            p2.setColor(1);
 
-    public static void main(String args[])
-    {
-        int n_games;
-        try{
-            n_games = Integer.parseInt(args[0]);
-            if(n_games < 1) {
-                throw new Exception();
+            HusBoardState board = new HusBoardState();
+            HusPlayer nextPlayer = p1;
+
+            while ( board.getWinner() == Board.NOBODY ) {
+                Move move = nextPlayer.chooseMove(board);
+                // board.move(board.getRandomMove());
+                board.move(move);
+                if (nextPlayer == p1) {
+                    nextPlayer = p2;
+                }
+                else {
+                    nextPlayer = p1;
+                }
             }
-        } catch (Exception e) {
-            System.err.println(
-                "First argument to Autoplay must be a positive int "
-                + "giving the number of games to play.");
-            return;
-        }
-
-        try {
-            ProcessBuilder server_pb = new ProcessBuilder(
-                "java", "-cp", "bin",  "boardgame.Server", "-ng", "-k");
-            server_pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-
-            Process server = server_pb.start();
-
-            ProcessBuilder client1_pb = new ProcessBuilder(
-                "java", "-cp", "bin", "-Xms520m", "-Xmx520m", "boardgame.Client", p1);
-            client1_pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-
-            ProcessBuilder client2_pb = new ProcessBuilder(
-                "java", "-cp", "bin", "-Xms520m", "-Xmx520m", "boardgame.Client", p2);
-            client2_pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-
-            for (int i=0; i < n_games; i++) {
-                System.out.println("Game "+i);
-
-                try {
-                    Thread.sleep(500);
-                } catch(InterruptedException ex) {
-                    Thread.currentThread().interrupt();
+            p1.learn(board.getWinner());
+            p1.cleanup();
+            // p1.learningLog2(board.getWinner());
+            if (board.getWinner() != Board.DRAW) {
+                if (board.getWinner() == 0) { // player0 won
+                    p1Wins++;
                 }
-
-                Process client1 = ((i % 2 == 0) ? client1_pb.start() : client2_pb.start());
-
-                try {
-                    Thread.sleep(500);
-                } catch(InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                }
-
-                Process client2 = ((i % 2 == 0) ? client2_pb.start() : client1_pb.start());
-
-                try{
-                    client1.waitFor();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                try{
-                    client2.waitFor();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                else if (board.getWinner() == 1) {
+                    p2Wins++;
                 }
             }
 
-            server.destroy();
+            // System.err.println("winner" + board.getWinner() + " p1 win rate: " + p1Wins/p2Wins);
+            System.err.println("winner" + board.getWinner() + " p1/p2: " + p1Wins +"/" + p2Wins + " = " + p1Wins/p2Wins);
+            // try{
+            //     Thread.sleep(1000);
+            // }
+            // catch (Exception e) {}
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            // if (board.getWinner() == 0) {
+            //     // get new params for p2
+            //     p2My = MyTools.getRandomParams();
+            //     p2Oppo = MyTools.getRandomParams();
+            //     // update count
+            //     tmpCount1 += 1;
+            //     tmpCount2 = 0;
+            //     // check best
+            //     if (bestCount < tmpCount1) {
+            //         bestMy = p1My;
+            //         bestOppo = p1Oppo;
+            //         bestCount = tmpCount1;
+            //         p1.learningLog2(board.getWinner());
+            //         System.err.println("best count updated: " + bestCount);
+            //     }
+            // }
+            // else if (board.getWinner() == 1) {
+            //     // get new params for p1
+            //     p1My = MyTools.getRandomParams();
+            //     p1My = MyTools.getRandomParams();
+            //     // update count
+            //     tmpCount2 += 1;
+            //     tmpCount1 = 0;
+            //     // check best
+            //     if (bestCount < tmpCount2) {
+            //         bestMy = p2My;
+            //         bestOppo = p2Oppo;
+            //         bestCount = tmpCount2;
+            //         p2.learningLog2(board.getWinner());
+            //         System.err.println("best count updated: " + bestCount);
+            //     }
+            // }
         }
     }
 }
-

@@ -42,10 +42,10 @@ public class StudentPlayer extends HusPlayer {
 
     public StudentPlayer(String s) {
         super(s);
-        this.DEBUG = true;
-        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | ITER_DEEPENING | BOARD_VALUE;
+        this.DEBUG = false;
+        this.STRATEGY = MINMAX | ALPHABETA_PRUNING | ORDER_MOVES | BOARD_VALUE;
         this.STRATEGY_STRING = strategyToString(STRATEGY);
-        this.DEFAULT_TREE_DEPTH = 6;
+        this.DEFAULT_TREE_DEPTH = 5;
         this.MAX_TREE_DEPTH = 200;
 
         this.timeout = false;
@@ -66,9 +66,9 @@ public class StudentPlayer extends HusPlayer {
     public HusMove chooseMove(HusBoardState board_state)
     {
         // init
-        Timer timer = new Timer();
-        resetTimer(timer);
-        resetMove();
+        // Timer timer = new Timer();
+        // resetTimer(timer);
+        // resetMove();
 
         // setup parameters
         boolean isIterRoot = false;
@@ -93,8 +93,8 @@ public class StudentPlayer extends HusPlayer {
         }
 
         // cleanup
-        cancelTimeout();
-        timer.cancel();
+        // cancelTimeout();
+        // timer.cancel();
 
         // return
         return currentMove;
@@ -251,7 +251,7 @@ public class StudentPlayer extends HusPlayer {
         this.timeout = false;
     }
 
-    private void resetMove()
+    public void resetMove()
     {
         this.currentMove = null;
     }
